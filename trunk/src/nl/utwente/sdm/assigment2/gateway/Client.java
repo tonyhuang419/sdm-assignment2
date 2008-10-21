@@ -65,6 +65,24 @@ public class Client {
 	}
 	
 	/**
+	 * Check whether this client has a device with the given address.
+	 * @param address The address of the device.
+	 * @return True when it has this device, otherwise false.
+	 */
+	public boolean hasDevice(String address) {
+		return _devices.containsKey(address);
+	}
+	
+	/**
+	 * Get a device by address.
+	 * @param address The address of the device.
+	 * @return The device.
+	 */
+	public Device getDevice(String address) {
+		return _devices.get(address);
+	}
+	
+	/**
 	 * Remove a trapdoor for this client/
 	 * @param keywordHash The hashed keyword of the trapdoor to remove.
 	 */
