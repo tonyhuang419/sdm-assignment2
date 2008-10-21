@@ -6,21 +6,29 @@ import java.util.HashSet;
 public class Client {
 	private String _identity;
 	private HashMap<String, TrapdoorAction> _trapdoors;
-	private HashSet<String> _devices;
-	private String _defaultDevice;
+	private HashSet<Device> _devices;
+	private Device _defaultDevice;
 	
-	public Client(String identity, String defaultDevice) {
+	public Client(String identity, String defaultDeviceAddress) {
 		_identity = identity;
 		_trapdoors = new HashMap<String, TrapdoorAction>();
-		_devices = new HashSet<String>();
-		_defaultDevice = defaultDevice;
+		_devices = new HashSet<Device>();
+		_defaultDevice = new Device(defaultDeviceAddress);
 	}
 	
 	public void addTrapdoor(String keywordHash, TrapdoorAction trapdoorAction) {
 		_trapdoors.put(keywordHash, trapdoorAction);
 	}
 	
-	public void addDevice(String device) {
+	public boolean trapdoorForKeywordExist(String keyword) {
+		return _trapdoors.containsKey(keyword);
+	}
+	
+	public TrapdoorAction getTrapdoorForKeyword(String keyword) {
+		return _trapdoors.get(keyword);
+	}
+	
+	public void addDevice(Device device) {
 		_devices.add(device);
 	}
 	
@@ -34,12 +42,11 @@ public class Client {
 			_devices.remove(device);
 	}
 	
-	public void setDefaultDevice(String defaultDevice) {
-		if (_devices.contains(defaultDevice))
-			_defaultDevice = defaultDevice;
+	public void setDefaultDevice(String defaultDeviceAddress) {
+		_defaultDevice = new Device(defaultDeviceAddress);
 	}
 	
-	public String getDefaultDevice() {
+	public Device getDefaultDevice() {
 		return _defaultDevice;
 	}
 	
