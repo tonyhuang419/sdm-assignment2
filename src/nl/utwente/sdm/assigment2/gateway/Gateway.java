@@ -68,6 +68,14 @@ public class Gateway {
 	public Client getClient(String identity) {
 		return _clients.get(identity);
 	}
+	
+	public void registerClient(String identity, String address) {
+		_clients.put(identity, new Client(identity, address));
+	}
+	
+	public void unregisterClient(String identity) {
+		_clients.remove(identity);
+	}
 
 	/**
 	 * This procedure should open a socket and start listening on it.

@@ -31,9 +31,11 @@ public class IBEMessageProtocol {
 		String cmd = splitInput[0];
 		
 		if(cmd.equals(IBEMessageProtocolCommands.MESSAGE)) {
+			// Handle the message command.
 			String source = splitInput[1];
 			String target = splitInput[2];
 			String message = splitInput[3];
+			// Read the keywords from the inputstream.
 			HashSet<String> keywords = new HashSet<String>();
 			StringBuffer keywordList = new StringBuffer();
 			for (int i=4; i<splitInput.length; ++i) {
@@ -45,6 +47,7 @@ public class IBEMessageProtocol {
 			// We have to check whether the clients has a trapdoor for a certain keyword.
 			if (_gateway.clientIsRegistered(target)) {
 				Client client = _gateway.getClient(target);
+				// Keep a list of devices which already received the message, so we can check wether a message is already send to a certain device.
 				HashSet<Device> sendToDevices = new HashSet<Device>();
 				boolean isSend = false;
 				String messageToReceiver = IBEMessageProtocolCommands.MESSAGE + " " + source + " " + message + " " + keywordList.toString();
@@ -69,21 +72,91 @@ public class IBEMessageProtocol {
 				return "Target client unknown";
 			}
 		}
-		else if(cmd.equals(IBEMessageProtocolCommands.REGISTER)) {}
-		else if(cmd.equals(IBEMessageProtocolCommands.UNREGISTER)) {}
+		else if(cmd.equals(IBEMessageProtocolCommands.REGISTER)) {
+			// Handle the register command.
+			if (splitInput.length == 3) {
+				String identity = splitInput[1];
+				String address = splitInput[2];
+				
+				if (!_gateway.clientIsRegistered(identity)) {
+					_gateway.registerClient(identity, address);
+					System.out.println("Client " + identity + " is registered.");
+					return "Client succesfully registered.";
+				} else {
+					return "Client already registered.";
+				}
+			} else {
+				return "Message contains too much arguments.";
+			}
+		}
+		else if(cmd.equals(IBEMessageProtocolCommands.UNREGISTER)) {
+			// Handle the unregister command.
+			if (splitInput.length == 2) {
+				String identity = splitInput[1];
+				
+				if (_gateway.clientIsRegistered(identity)) {
+					_gateway.unregisterClient(identity);
+				} else {
+					return "Client is not registered, cannot unregister.";
+				}
+			} else {
+				return "Message contains too much arguments.";
+			}
+		}
 		else if(cmd.equals(IBEMessageProtocolCommands.TRAPDOOR)) {
-			cmd = splitInput[1];
-			
-			if(cmd.equals(IBEMessageProtocolCommands.ADD)) {}
-			else if(cmd.equals(IBEMessageProtocolCommands.REMOVE)) {}
-			else { return "unable to process input: unknown TRAPDOOR command"; }
+			// Handle the trapdoor command.
+			String clientIdentity = splitInput[1];
+			String hashedKeyword = splitInput[2];
+
+			if(cmd.equals(IBEMessageProtocolCommands.ADD)) {
+				// Read the devices from the inputstream.
+				HashSet<Device> devices = new HashSet<Device>();
+				for (int i=3; i<splitInput.length; ++i) {
+					devices.add(_gateway.getClient(clientIdentity).getDevice(splitInput[i]));
+				}
+				
+				TrapdoorAction trapdoor = new TrapdoorAction(devices);
+				_gateway.getClient(clientIdentity).addTrapdoor(hashedKeyword, trapdoor);
+				return "Trapdoor succesfully added.";
+			}
+			else if(cmd.equals(IBEMessageProtocolCommands.REMOVE)) {
+				if (_gateway.getClient(clientIdentity).trapdoorForKeywordExist(hashedKeyword)) {
+					_gateway.getClient(clientIdentity).removeTrapdoor(hashedKeyword);
+					return "Trapdoor succesfully removed.";
+				} else {
+					return "Trapdoor doesn't exist for the given keyword.";
+				}
+			}
+			else {
+				return "unable to process input: unknown TRAPDOOR command";
+			}
 		}
 		else if(cmd.equals(IBEMessageProtocolCommands.DEVICE)) {
 			cmd = splitInput[1];
-
-			if(cmd.equals(IBEMessageProtocolCommands.ADD)) {}
-			else if(cmd.equals(IBEMessageProtocolCommands.REMOVE)) {}
-			else { return "unable to process input: unknown DEVICE command"; }
+			
+			// Handle the device add command.
+			if (splitInput.length == 3) {
+				String clientIdentity = splitInput[1];
+				if (!_gateway.clientIsRegistered(clientIdentity))
+					return "Client with identity '" + clientIdentity + "' is not registered at this gateway.";
+				
+				String deviceAddress = splitInput[2];
+				if(cmd.equals(IBEMessageProtocolCommands.ADD)) {
+					if (!_gateway.getClient(clientIdentity).hasDevice(deviceAddress))
+						_gateway.getClient(clientIdentity).addDevice(deviceAddress);
+					else
+						return "Device with address '" + deviceAddress + "' for client with identity '" + clientIdentity + "' is already registered at this gateway.";
+				}
+				else if(cmd.equals(IBEMessageProtocolCommands.REMOVE)) {
+					if (_gateway.getClient(clientIdentity).hasDevice(deviceAddress))
+						_gateway.getClient(clientIdentity).removeDevice(deviceAddress);
+					else
+						return "Device with address '" + deviceAddress + "' for client with identity '" + clientIdentity + "' is not registered at this gateway.";
+				}
+				else { return "Unable to process input: unknown DEVICE command"; }
+			} else {
+				return "Message contains too much arguments.";
+			}
 		}
 		else { return "unable to process input: unknown input"; }
 		return null;

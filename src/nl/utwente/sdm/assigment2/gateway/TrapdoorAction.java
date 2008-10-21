@@ -28,4 +28,20 @@ public class TrapdoorAction {
 	public HashSet<Device> getTrapdoorDevices() {
 		return _devices;
 	}
+	
+	/**
+	 * Add a device to the trapdoor.
+	 * @param device The device to add.
+	 */
+	public void addDevice(Device device) {
+		_devices.add(device);
+	}
+
+	/**
+	 * Remove a device from the trapdoor.
+	 * @param device The device to remove.
+	 */
+	public void removeDevice(Device device) {
+		_devices.remove(device);
+	}
 }
