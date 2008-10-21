@@ -48,6 +48,7 @@ public class Gateway {
 		System.out.println("Starting gateway.");
 		_identity = identity;
 		_clients = new HashMap<String, Client>();
+		start();
 	}
 	
 	/**
@@ -84,6 +85,8 @@ public class Gateway {
             System.err.println("Could not listen on port: " + PORT_NUMBER);
             System.exit(-1);
         }
+        
+        System.out.println("Server ready for clients to communicate.");
 
         while (true) {
         	try {
@@ -95,6 +98,15 @@ public class Gateway {
 	}
 
 	/**
+	 * Get the private key of the gateway.
+	 * @return The private key of the gateway.
+	 */
+	public PrivateKey getPrivateKey() {
+		IBEHelper helper = new IBEHelper();
+		return helper.getPrivateKey(_identity);
+	}
+	
+	/**
 	 * The Main procedure initializes the Gateway object to start the Gateway server.
 	 * @param args The first argument should be the identity of the gateway.
 	 */
@@ -104,14 +116,5 @@ public class Gateway {
 		} else {
 			System.out.println("The first argument should be the identity of the gateway.");
 		}
-	}
-	
-	/**
-	 * Get the private key of the gateway.
-	 * @return The private key of the gateway.
-	 */
-	public PrivateKey getPrivateKey() {
-		IBEHelper helper = new IBEHelper();
-		return helper.getPrivateKey(_identity);
 	}
 }
