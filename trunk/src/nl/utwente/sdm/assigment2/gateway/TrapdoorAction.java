@@ -10,6 +10,7 @@ import java.util.HashSet;
  *
  */
 public class TrapdoorAction {
+	/** The devices to send the message to when this trapdoor is fired. */
 	private HashSet<Device> _devices;
 
 	/**

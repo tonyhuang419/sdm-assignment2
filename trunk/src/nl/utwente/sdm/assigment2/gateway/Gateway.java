@@ -1,10 +1,11 @@
 package nl.utwente.sdm.assigment2.gateway;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.UnknownHostException;
+import java.security.PrivateKey;
 import java.util.HashMap;
+
+import nl.utwente.sdm.assigment2.IBEHelper;
 
 /**
  * The Main class for the gateway.
@@ -14,8 +15,14 @@ import java.util.HashMap;
 public class Gateway {
 	private static final int PORT_NUMBER = 12345;
 	
+	/** This is used to create a singleton object of gateway. */
 	private static Gateway _gateway;
 	
+	/**
+	 * Get the gateway object from other classes, this should be a singleton.
+	 * The object is created in the main method of this class.
+	 * @return The Gateway object.
+	 */
 	public static Gateway getGateway() {
 		return _gateway;
 	}
@@ -43,10 +50,20 @@ public class Gateway {
 		_clients = new HashMap<String, Client>();
 	}
 	
+	/**
+	 * Check whether a client is registered to this gateway.
+	 * @param identity The identity of the client.
+	 * @return True if the client is registered, otherwise false.
+	 */
 	public boolean clientIsRegistered(String identity) {
 		return _clients.containsKey(identity);
 	}
 	
+	/**
+	 * Get the client with a certain identity.
+	 * @param identity The identity of the client.
+	 * @return The client object.
+	 */
 	public Client getClient(String identity) {
 		return _clients.get(identity);
 	}
@@ -88,5 +105,13 @@ public class Gateway {
 			System.out.println("The first argument should be the identity of the gateway.");
 		}
 	}
-
+	
+	/**
+	 * Get the private key of the gateway.
+	 * @return The private key of the gateway.
+	 */
+	public PrivateKey getPrivateKey() {
+		IBEHelper helper = new IBEHelper();
+		return helper.getPrivateKey(_identity);
+	}
 }
