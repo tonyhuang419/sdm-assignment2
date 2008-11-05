@@ -6,6 +6,10 @@ package nl.utwente.sdm.assigment2;
  * @author Harmen
  */
 public final class IBEMessageProtocolCommands {
+	public static final String GETGLOBALS = "GETGLOBALS";
+	/** Command send to the keyserver to authenticate and get the private key. */
+	public static final String AUTHENTICATE = "AUTHENTICATE";
+	
 	/** Command to send a message. */
 	public static final String MESSAGE = "MESSAGE";
 	/** Command to register a client. */

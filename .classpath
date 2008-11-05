@@ -2,7 +2,9 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="lib/IdentityBasedEncryptionJCA.1.0.38.jar" sourcepath="lib/IdentityBasedEncryptionJCA.1.0.38-src"/>
-	<classpathentry kind="lib" path="lib/blitz.jar"/>
+	<classpathentry kind="lib" path="lib/blitz-dev.jar"/>
+	<classpathentry kind="lib" path="lib/fault-dev.jar"/>
+	<classpathentry kind="lib" path="lib/IdentityBasedEncryptionJCA.1.0.38.jar"/>
+	<classpathentry kind="lib" path="lib/tender-dev.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

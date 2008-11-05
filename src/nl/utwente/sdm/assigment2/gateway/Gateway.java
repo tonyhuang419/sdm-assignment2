@@ -2,10 +2,13 @@ package nl.utwente.sdm.assigment2.gateway;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.util.HashMap;
 
 import nl.utwente.sdm.assigment2.IBEHelper;
+import nuim.cs.crypto.ibe.IbePrivateKey;
+import nuim.cs.crypto.ibe.IbeSystemParameters;
 
 /**
  * The Main class for the gateway.
@@ -13,10 +16,14 @@ import nl.utwente.sdm.assigment2.IBEHelper;
  * @author Harmen
  */
 public class Gateway {
-	private static final int PORT_NUMBER = 12345;
+	private static final int PORT_NUMBER = 10002;
 	
 	/** This is used to create a singleton object of gateway. */
 	private static Gateway _gateway;
+	
+	private IbePrivateKey _privateKey;
+	
+	private IbeSystemParameters _systemParameters;
 	
 	/**
 	 * Get the gateway object from other classes, this should be a singleton.
@@ -44,10 +51,23 @@ public class Gateway {
 	 * This will initialize and start the gateway server.
 	 * @param identity The identity of the gateway.
 	 */
-	private Gateway(String identity) {
+	private Gateway(String identity, String keyServerAddress) {
+		// Set the gateway object, this makes this object a singleton.
+		_gateway = this;
 		System.out.println("Starting gateway.");
 		_identity = identity;
 		_clients = new HashMap<String, Client>();
+		try {
+			System.out.println("Sending private key request to key server.");
+			Object[] sysParamsAndPrivateKey = IBEHelper.authenticateWithKeyServer(keyServerAddress, IBEHelper.getMessageDigest(), _identity);
+			_systemParameters = (IbeSystemParameters) sysParamsAndPrivateKey[0];
+			_privateKey = (IbePrivateKey) sysParamsAndPrivateKey[1];
+			System.out.println("Succesfully received private key and global parameters.");
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
 		start();
 	}
 	
@@ -110,8 +130,11 @@ public class Gateway {
 	 * @return The private key of the gateway.
 	 */
 	public PrivateKey getPrivateKey() {
-		IBEHelper helper = new IBEHelper();
-		return helper.getPrivateKey(_identity);
+		return _privateKey;
+	}
+	
+	public IbeSystemParameters getSystemParameters() {
+		return _systemParameters;
 	}
 	
 	/**
@@ -119,10 +142,10 @@ public class Gateway {
 	 * @param args The first argument should be the identity of the gateway.
 	 */
 	public static void main(String[] args) {
-		if (args.length == 1) {
-			_gateway = new Gateway(args[0].toString());
+		if (args.length == 2) {
+			new Gateway(args[0].toString(), args[1].toString());
 		} else {
-			System.out.println("The first argument should be the identity of the gateway.");
+			System.out.println("The first argument should be the identity of the gateway and the second the address of the keyserver.\nExample: java Gateway gateway@utwente.nl keyserver.utwente.nl");
 		}
 	}
 }

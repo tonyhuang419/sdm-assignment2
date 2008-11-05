@@ -4,6 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -18,12 +22,24 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import nl.utwente.sdm.assigment2.IBEHelper;
+import nuim.cs.crypto.ibe.IbePrivateKey;
+import nuim.cs.crypto.ibe.IbeSystemParameters;
+
 /**
  * The Main class for the Client.
  * @author Harmen
  */
 public class Client extends JFrame {
 	private String _identity;
+	
+	private IbeSystemParameters _systemParameters;
+	
+	private IbePrivateKey _privateKey;
+	
+	private String _gatewayAddress;
+	
+	private MessageDigest _hash;
 
 	/**
 	 * The procedure will set the correct look and feel,
@@ -32,7 +48,7 @@ public class Client extends JFrame {
 	 */
 	public static void main(String[] args) {
 	    try {
-		    // Set System L&F so it will look as a 'normaal' application.
+		    // Set System L&F so it will look as a 'normal' application.
 	        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	    } 
 	    catch (UnsupportedLookAndFeelException e) {}
@@ -40,17 +56,39 @@ public class Client extends JFrame {
 	    catch (InstantiationException e) {}
 	    catch (IllegalAccessException e) {}
 		
+	    // Get the information to be able to startup the client.
 		String identity = JOptionPane.showInputDialog("What is your identity?");
-		new Client(identity);
+		String keyServerAddress = JOptionPane.showInputDialog("What is the address of the key server?", "localhost");
+		String gatewayAddress = JOptionPane.showInputDialog("What is the address of the gateway?", "localhost");
+		
+		// Start the client.
+		new Client(identity, keyServerAddress, gatewayAddress);
 	}
 	
 	/**
 	 * Constructor.
 	 * @param identity The identity of the client.
 	 */
-	public Client(String identity) {
+	public Client(String identity, String keyServerAddress, String gatewayAddress) {
 		super("IBEClient - " + identity);
 		_identity = identity;
+		_gatewayAddress = gatewayAddress;
+		try {
+			_hash = IBEHelper.getMessageDigest();
+		} catch (NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+		}
+		
+		try {
+			Object[] sysParamsAndPrivateKey = IBEHelper.authenticateWithKeyServer(keyServerAddress, _hash, _identity);
+			System.out.println("Authenticating with key server.");
+			_systemParameters = (IbeSystemParameters) sysParamsAndPrivateKey[0];
+			System.out.println("Succesfully received public parameters.");
+			_privateKey = (IbePrivateKey) sysParamsAndPrivateKey[1];
+			System.out.println("Succesfully received private key.");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		createGUI();
 	}
@@ -98,7 +136,7 @@ public class Client extends JFrame {
 		
 		contentPane.add(gridPanel, BorderLayout.CENTER);
 		
-		JButton clearButton = new JButton(new AbstractAction() {
+		final JButton clearButton = new JButton(new AbstractAction() {
 			public void actionPerformed(ActionEvent arg0) {
 				keywordsField.setText("");
 				messageArea.setText("");
@@ -113,7 +151,16 @@ public class Client extends JFrame {
 				String message = messageArea.getText();
 				String sendToIdentity = sendToField.getText();
 				
-				JOptionPane.showMessageDialog(Client.this, "The client is going to send a message to " + sendToIdentity + "\nwith the keywords:\n" + keywords + "\nand message:\n" + message);
+				try {
+					String sendStatus = IBEHelper.sendMessageToClient(message, keywords, _identity, sendToIdentity, _gatewayAddress, _systemParameters, _hash);
+					JOptionPane.showMessageDialog(Client.this, "Message send status: " + sendStatus);
+					// Clear the fields.
+					clearButton.doClick();
+				} catch (UnknownHostException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		});
 		sendButton.setText("Send");

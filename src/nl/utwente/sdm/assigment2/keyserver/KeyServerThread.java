@@ -1,4 +1,4 @@
-package nl.utwente.sdm.assigment2.gateway;
+package nl.utwente.sdm.assigment2.keyserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,23 +7,20 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
- * The Server thread for the gateway, these threads are created for each client which connects to the gateway.
+ * The Server thread for the key server, 
+ * these threads are created for each client which connects to the key server.
  * @author Harmen
  */
-public class GatewayServerThread extends Thread {
+public class KeyServerThread extends Thread {
 	/** The socket of the server. */
 	private Socket socket = null;
-	
-	/** Reference to the gateway to access some properties. */
-	private Gateway _gateway;
 
 	/**
 	 * Constructor.
 	 * @param socket The socket for the server thread.
 	 */
-	public GatewayServerThread(Socket socket) {
-		super("GatewayServerThread");
-		_gateway = Gateway.getGateway();
+	public KeyServerThread(Socket socket) {
+		super("KeyServerThread");
 		this.socket = socket;
 	}
 
@@ -37,17 +34,11 @@ public class GatewayServerThread extends Thread {
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 			// Read in the whole message. The maximum length of the message is MAX_MESSAGE_LENGTH.
-			String encryptedMessage = in.readLine();
-			
-			String message = encryptedMessage;
-			// Decrypt the message send.
-			//String message = IBEHelper.decryptMessage(_gateway.getPrivateKey(), _gateway.getSystemParameters(), encryptedMessage.getBytes());
-			
-			System.out.println("Received message: " + message.toString());
-			
+			String inputLine = in.readLine();
+			System.out.println("Received message: " + inputLine);
 			// Now delegate the message to the protocol, which will process it and get the correct response.
 			IBEMessageProtocol imp = new IBEMessageProtocol();
-			out.write(imp.processInput(message));
+			out.write(imp.processInput(inputLine));
 			
 			// Close the streams.
 			out.close();
