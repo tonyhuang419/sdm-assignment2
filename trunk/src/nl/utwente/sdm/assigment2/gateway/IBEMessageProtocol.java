@@ -34,13 +34,17 @@ public class IBEMessageProtocol {
 			// Handle the message command.
 			String source = splitInput[1];
 			String target = splitInput[2];
-			String message = splitInput[3];
+			int nrOfKeywords = new Integer(splitInput[3]).intValue();
 			// Read the keywords from the inputstream.
 			HashSet<String> keywords = new HashSet<String>();
 			StringBuffer keywordList = new StringBuffer();
-			for (int i=4; i<splitInput.length; ++i) {
+			for (int i=4; i<4+nrOfKeywords; ++i) {
 				keywords.add(splitInput[i]);
 				keywordList.append(splitInput[i]);
+			}
+			StringBuffer encryptedMessage = new StringBuffer();
+			for (int i=4+nrOfKeywords; i<splitInput.length; ++i) {
+				encryptedMessage.append(splitInput[i]);
 			}
 			
 			// Now connect to the target and deliver the message.
@@ -50,7 +54,7 @@ public class IBEMessageProtocol {
 				// Keep a list of devices which already received the message, so we can check wether a message is already send to a certain device.
 				HashSet<Device> sendToDevices = new HashSet<Device>();
 				boolean isSend = false;
-				String messageToReceiver = IBEMessageProtocolCommands.MESSAGE + " " + source + " " + message + " " + keywordList.toString();
+				String messageToReceiver = IBEMessageProtocolCommands.MESSAGE + " " + source + " " + nrOfKeywords + " " + keywordList.toString() + " " + encryptedMessage;
 				for (String keyword : keywords) {
 					if (client.trapdoorForKeywordExist(keyword)) {
 						TrapdoorAction trapdoor = client.getTrapdoorForKeyword(keyword);
@@ -68,6 +72,7 @@ public class IBEMessageProtocol {
 				if (!isSend) {
 					client.getDefaultDevice().send(messageToReceiver);
 				}
+				return "Send";
 			} else {
 				return "Target client unknown";
 			}
