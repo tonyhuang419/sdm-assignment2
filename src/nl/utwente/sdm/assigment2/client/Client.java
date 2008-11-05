@@ -31,14 +31,19 @@ import nuim.cs.crypto.ibe.IbeSystemParameters;
  * @author Harmen
  */
 public class Client extends JFrame {
+	/** The identity of the client. */
 	private String _identity;
 	
+	/** The parameters to use, for encrypting messages. */
 	private IbeSystemParameters _systemParameters;
 	
+	/** The private key for the client. */
 	private IbePrivateKey _privateKey;
 	
+	/** The address to the gateway server. */
 	private String _gatewayAddress;
 	
+	/** The MessageDigest to use for the encryption. */
 	private MessageDigest _hash;
 
 	/**

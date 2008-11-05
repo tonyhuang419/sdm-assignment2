@@ -14,16 +14,12 @@ public class GatewayServerThread extends Thread {
 	/** The socket of the server. */
 	private Socket socket = null;
 	
-	/** Reference to the gateway to access some properties. */
-	private Gateway _gateway;
-
 	/**
 	 * Constructor.
 	 * @param socket The socket for the server thread.
 	 */
 	public GatewayServerThread(Socket socket) {
 		super("GatewayServerThread");
-		_gateway = Gateway.getGateway();
 		this.socket = socket;
 	}
 
