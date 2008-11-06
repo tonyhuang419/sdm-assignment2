@@ -41,10 +41,10 @@ public class IBEMessageProtocol {
 					encryptedMessageBuffer.append("\n");
 			}
 			
-			System.out.println("Received encrypted message: " + encryptedMessageBuffer.toString());
+			//System.out.println("Received encrypted message: " + encryptedMessageBuffer.toString());
 			
-			byte[] receivedMessage = encryptedMessageBuffer.toString().getBytes();
-			System.out.println("Size of received encrypted message: " + receivedMessage.length);
+			//byte[] receivedMessage = encryptedMessageBuffer.toString().getBytes();
+			//System.out.println("Size of received encrypted message: " + receivedMessage.length);
 			
 			//byte encryptedMessage[] = IBEHelper.encryptMessage("test bericht".getBytes(), IBEHelper.getPublicKey("onwieze@gmail.com", IBEHelper.getMessageDigest()), _client.getSystemParameters());
 			//System.out.println("Encrypted message: " + new String(encryptedMessage));

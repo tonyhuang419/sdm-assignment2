@@ -176,7 +176,7 @@ public class IBEHelper {
 			AffinePoint pointPpub = new AffinePoint(fp.element(new BigInteger(ibeSysParamsPPubx)), fp.element(new BigInteger(ibeSysParamsPPuby)));
 			
 			IbePrivateKey privateKey = new IbePrivateKey(new AffinePoint(fp.element(new BigInteger(x)), fp.element(new BigInteger(y))));
-			System.out.println("Received privatekey: " + privateKey.toString());
+			//System.out.println("Received privatekey: " + privateKey.toString());
 			
 			IbeSystemParameters systemParameters = new IbeSystemParameters(map, pointP, pointPpub, hash);
 			
@@ -192,12 +192,10 @@ public class IBEHelper {
 	public static String sendMessageToGateway(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash) throws UnknownHostException, IOException {
 		// Encrypt the message to send to the client using the identity of the receiver.
 		byte[] encryptedMessage = encryptMessage(message.getBytes(), getPublicKey(sendToIdentity, hash), systemParameters);
-		System.out.println("Size of send encrypted message: " + encryptedMessage.length);
-		System.out.println("Encrypted message to client: " + new String(encryptedMessage));
+		//System.out.println("Size of send encrypted message: " + encryptedMessage.length);
+		//System.out.println("Encrypted message to client: " + new String(encryptedMessage));
 		
 		int nrOfKeywords = keywords.split(" ").length;
-		
-		System.out.println("Encrypted message: " + new String(encryptedMessage));
 		
 		// Connect to the gateway.
 		Socket socket = new Socket(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT);
@@ -263,7 +261,7 @@ public class IBEHelper {
 		out.println(IBEMessageProtocolCommands.END_OF_MESSAGE);
 		
 		String response = in.readLine();
-		System.out.println("Received: " + response);
+		//System.out.println("Received: " + response);
 		
 		in.close();
 		out.close();

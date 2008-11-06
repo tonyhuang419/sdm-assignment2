@@ -50,7 +50,7 @@ public class ClientListenThread extends Thread {
 				lines.add(line);
 			}
 			
-			System.out.println("Received message (first line): " + lines.get(0));
+			//System.out.println("Received message (first line): " + lines.get(0));
 			
 			// Decrypt the message send.
 			//String message = IBEHelper.decryptMessage(_client.getPrivateKey(), _client.getSystemParameters(), encryptedMessage.getBytes());
