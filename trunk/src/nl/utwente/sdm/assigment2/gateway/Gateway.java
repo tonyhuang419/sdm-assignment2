@@ -89,8 +89,8 @@ public class Gateway {
 		return _clients.get(identity);
 	}
 	
-	public void registerClient(String identity, String address) {
-		_clients.put(identity, new Client(identity, address));
+	public void registerClient(String identity, String address, int port) {
+		_clients.put(identity, new Client(identity, address, port));
 	}
 	
 	public void unregisterClient(String identity) {

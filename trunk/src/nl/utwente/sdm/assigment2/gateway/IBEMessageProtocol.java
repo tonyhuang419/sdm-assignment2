@@ -83,12 +83,13 @@ public class IBEMessageProtocol {
 		}
 		else if(cmd.equals(IBEMessageProtocolCommands.REGISTER)) {
 			// Handle the register command.
-			if (splitInput.length == 3) {
+			if (splitInput.length == 4) {
 				String identity = splitInput[1];
 				String address = splitInput[2];
+				int port = new Integer(splitInput[3]).intValue();
 				
 				if (!_gateway.clientIsRegistered(identity)) {
-					_gateway.registerClient(identity, address);
+					_gateway.registerClient(identity, address, port);
 					System.out.println("Client " + identity + " is registered.");
 					return "Client succesfully registered.";
 				} else {
@@ -150,9 +151,10 @@ public class IBEMessageProtocol {
 					return "Client with identity '" + clientIdentity + "' is not registered at this gateway.";
 				
 				String deviceAddress = splitInput[2];
+				int devicePort = new Integer(splitInput[3]).intValue();
 				if(cmd.equals(IBEMessageProtocolCommands.ADD)) {
 					if (!_gateway.getClient(clientIdentity).hasDevice(deviceAddress))
-						_gateway.getClient(clientIdentity).addDevice(deviceAddress);
+						_gateway.getClient(clientIdentity).addDevice(deviceAddress, devicePort);
 					else
 						return "Device with address '" + deviceAddress + "' for client with identity '" + clientIdentity + "' is already registered at this gateway.";
 				}

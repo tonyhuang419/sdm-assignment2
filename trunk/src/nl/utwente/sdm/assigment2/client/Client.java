@@ -23,6 +23,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import nl.utwente.sdm.assigment2.IBEHelper;
+import nl.utwente.sdm.assigment2.IBEMessageProtocolConstants;
 import nuim.cs.crypto.ibe.IbePrivateKey;
 import nuim.cs.crypto.ibe.IbeSystemParameters;
 
@@ -49,6 +50,9 @@ public class Client extends JFrame {
 	/** The address of the local machine of the client, so the gateway can send messages to it. */
 	private String _localAddress;
 	
+	/** The port on which the local machine should listen to. */
+	private int _localPort;
+	
 	/** The MessageDigest to use for the encryption. */
 	private MessageDigest _hash;
 
@@ -72,22 +76,27 @@ public class Client extends JFrame {
 		String keyServerAddress = JOptionPane.showInputDialog("What is the address of the key server?", "localhost");
 		String gatewayAddress = JOptionPane.showInputDialog("What is the address of the gateway?", "localhost");
 		String localAddress = JOptionPane.showInputDialog("What is the address of this pc?", "localhost");
+		int localPort = new Integer(JOptionPane.showInputDialog("What port should be used for the client?", IBEMessageProtocolConstants.CLIENT_LISTEN_PORT)).intValue();
+		while (!(localPort > 10002 && localPort < 20000)) {
+			localPort = new Integer(JOptionPane.showInputDialog("What port should be used for the client (between 10003 and 20000)?", IBEMessageProtocolConstants.CLIENT_LISTEN_PORT)).intValue();
+		}
 		
 		// Start the client.
-		new Client(identity, keyServerAddress, gatewayAddress, localAddress);
+		new Client(identity, keyServerAddress, gatewayAddress, localAddress, localPort);
 	}
 	
 	/**
 	 * Constructor.
 	 * @param identity The identity of the client.
 	 */
-	public Client(String identity, String keyServerAddress, String gatewayAddress, String localAddress) {
+	public Client(String identity, String keyServerAddress, String gatewayAddress, String localAddress, int localPort) {
 		super("IBEClient - " + identity);
 		
 		// Save the information to instance variables.
 		_identity = identity;
 		_gatewayAddress = gatewayAddress;
 		_localAddress = localAddress;
+		_localPort = localPort;
 		try {
 			_hash = IBEHelper.getMessageDigest();
 		} catch (NoSuchAlgorithmException e1) {
@@ -103,7 +112,7 @@ public class Client extends JFrame {
 			System.out.println("Succesfully received private key.");
 			
 			System.out.println("Registering in Gateway server.");
-			String gatewayResponse = IBEHelper.registerToGateway(_identity, _localAddress, _gatewayAddress);
+			String gatewayResponse = IBEHelper.registerToGateway(_identity, _localAddress, _localPort, _gatewayAddress);
 			System.out.println("Response from gateway: " + gatewayResponse);
 			
 			// Popup the GUI.
@@ -223,6 +232,10 @@ public class Client extends JFrame {
 	
 	public IbeSystemParameters getSystemParameters() {
 		return _systemParameters;
+	}
+
+	public int getPortNumber() {
+		return _localPort;
 	}
 
 }
