@@ -163,6 +163,9 @@ public class Client extends JFrame {
 		contentPane.add(gridPanel, BorderLayout.CENTER);
 		
 		final JButton clearButton = new JButton(new AbstractAction() {
+			/** Default serial version uid. */
+			private static final long serialVersionUID = 1L;
+
 			public void actionPerformed(ActionEvent arg0) {
 				keywordsField.setText("");
 				messageArea.setText("");
