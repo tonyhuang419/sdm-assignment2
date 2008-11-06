@@ -31,6 +31,9 @@ import nuim.cs.crypto.ibe.IbeSystemParameters;
  * @author Harmen
  */
 public class Client extends JFrame {
+	/** The default serial version uid. */
+	private static final long serialVersionUID = 1L;
+
 	/** The identity of the client. */
 	private String _identity;
 	
@@ -42,6 +45,9 @@ public class Client extends JFrame {
 	
 	/** The address to the gateway server. */
 	private String _gatewayAddress;
+	
+	/** The address of the local machine of the client, so the gateway can send messages to it. */
+	private String _localAddress;
 	
 	/** The MessageDigest to use for the encryption. */
 	private MessageDigest _hash;
@@ -65,19 +71,23 @@ public class Client extends JFrame {
 		String identity = JOptionPane.showInputDialog("What is your identity?");
 		String keyServerAddress = JOptionPane.showInputDialog("What is the address of the key server?", "localhost");
 		String gatewayAddress = JOptionPane.showInputDialog("What is the address of the gateway?", "localhost");
+		String localAddress = JOptionPane.showInputDialog("What is the address of this pc?", "localhost");
 		
 		// Start the client.
-		new Client(identity, keyServerAddress, gatewayAddress);
+		new Client(identity, keyServerAddress, gatewayAddress, localAddress);
 	}
 	
 	/**
 	 * Constructor.
 	 * @param identity The identity of the client.
 	 */
-	public Client(String identity, String keyServerAddress, String gatewayAddress) {
+	public Client(String identity, String keyServerAddress, String gatewayAddress, String localAddress) {
 		super("IBEClient - " + identity);
+		
+		// Save the information to instance variables.
 		_identity = identity;
 		_gatewayAddress = gatewayAddress;
+		_localAddress = localAddress;
 		try {
 			_hash = IBEHelper.getMessageDigest();
 		} catch (NoSuchAlgorithmException e1) {
@@ -91,11 +101,22 @@ public class Client extends JFrame {
 			System.out.println("Succesfully received public parameters.");
 			_privateKey = (IbePrivateKey) sysParamsAndPrivateKey[1];
 			System.out.println("Succesfully received private key.");
+			
+			System.out.println("Registering in Gateway server.");
+			String gatewayResponse = IBEHelper.registerToGateway(_identity, _localAddress, _gatewayAddress);
+			System.out.println("Response from gateway: " + gatewayResponse);
+			
+			// Popup the GUI.
+			createGUI();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		createGUI();
+		// Now we have to start the client socket, so the client can receive messages.
+		System.out.println("Starting client listen socket.");
+		ClientListenSocket socket = new ClientListenSocket(this);
+		socket.run();
+		System.out.println("Client listen socket started.");
 	}
 	
 	/**
@@ -151,13 +172,16 @@ public class Client extends JFrame {
 		clearButton.setText("Clear");
 		
 		JButton sendButton = new JButton(new AbstractAction() {
+			/** Default serial version uid. */
+			private static final long serialVersionUID = 1L;
+
 			public void actionPerformed(ActionEvent arg0) {
 				String keywords = keywordsField.getText();
 				String message = messageArea.getText();
 				String sendToIdentity = sendToField.getText();
 				
 				try {
-					String sendStatus = IBEHelper.sendMessageToClient(message, keywords, _identity, sendToIdentity, _gatewayAddress, _systemParameters, _hash);
+					String sendStatus = IBEHelper.sendMessageToGateway(message, keywords, _identity, sendToIdentity, _gatewayAddress, _systemParameters, _hash);
 					JOptionPane.showMessageDialog(Client.this, "Message send status: " + sendStatus);
 					// Clear the fields.
 					clearButton.doClick();
@@ -177,6 +201,25 @@ public class Client extends JFrame {
 		
 		// Show the frame.
 		setVisible(true);
+	}
+	
+	public void showReceivedMessage(final String fromIdentity, final String message) {
+		Thread showWindows = new Thread() {
+			@Override
+			public void run() {
+				super.run();
+				JOptionPane.showMessageDialog(Client.this, "Received message from " + fromIdentity);
+			}
+		};
+		showWindows.start();
+	}
+	
+	public IbePrivateKey getPrivateKey() {
+		return _privateKey;
+	}
+	
+	public IbeSystemParameters getSystemParameters() {
+		return _systemParameters;
 	}
 
 }

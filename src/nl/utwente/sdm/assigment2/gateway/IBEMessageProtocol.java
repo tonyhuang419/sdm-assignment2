@@ -1,6 +1,7 @@
 package nl.utwente.sdm.assigment2.gateway;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import nl.utwente.sdm.assigment2.IBEMessageProtocolCommands;
 
@@ -24,8 +25,9 @@ public class IBEMessageProtocol {
 	 * @param input The input received.
 	 * @return The output send to the sender (so the client who send the message).
 	 */
-	public String processInput(String input) {
+	public String processInput(LinkedList<String> lines) {
 		// Split the received message on the spaces.
+		String input = lines.get(0);
 		String[] splitInput = input.split(" ");
 		// The first part is the command.
 		String cmd = splitInput[0];
@@ -43,8 +45,10 @@ public class IBEMessageProtocol {
 				keywordList.append(splitInput[i]);
 			}
 			StringBuffer encryptedMessage = new StringBuffer();
-			for (int i=4+nrOfKeywords; i<splitInput.length; ++i) {
-				encryptedMessage.append(splitInput[i]);
+			for (int i=1; i<lines.size(); ++i) {
+				encryptedMessage.append(lines.get(i));
+				if (i < (lines.size() - 1))
+					encryptedMessage.append("\n");
 			}
 			
 			// Now connect to the target and deliver the message.
@@ -54,7 +58,7 @@ public class IBEMessageProtocol {
 				// Keep a list of devices which already received the message, so we can check wether a message is already send to a certain device.
 				HashSet<Device> sendToDevices = new HashSet<Device>();
 				boolean isSend = false;
-				String messageToReceiver = IBEMessageProtocolCommands.MESSAGE + " " + source + " " + nrOfKeywords + " " + keywordList.toString() + " " + encryptedMessage;
+				String messageToReceiver = IBEMessageProtocolCommands.MESSAGE + " " + source + "\n" + encryptedMessage;
 				for (String keyword : keywords) {
 					if (client.trapdoorForKeywordExist(keyword)) {
 						TrapdoorAction trapdoor = client.getTrapdoorForKeyword(keyword);
@@ -62,7 +66,7 @@ public class IBEMessageProtocol {
 						for (Device device : devices) {
 							if (!sendToDevices.contains(device)) {
 								// Send the message to the device.
-								device.send(messageToReceiver);
+								device.send(source, messageToReceiver);
 								sendToDevices.add(device);
 							}
 						}
@@ -70,7 +74,7 @@ public class IBEMessageProtocol {
 					}
 				}
 				if (!isSend) {
-					client.getDefaultDevice().send(messageToReceiver);
+					client.getDefaultDevice().send(source, messageToReceiver);
 				}
 				return "Send";
 			} else {

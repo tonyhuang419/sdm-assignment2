@@ -1,4 +1,4 @@
-package nl.utwente.sdm.assigment2.gateway;
+package nl.utwente.sdm.assigment2.client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,17 +13,21 @@ import nl.utwente.sdm.assigment2.IBEMessageProtocolCommands;
  * The Server thread for the gateway, these threads are created for each client which connects to the gateway.
  * @author Harmen
  */
-public class GatewayServerThread extends Thread {
+public class ClientListenThread extends Thread {
 	/** The socket of the server. */
-	private Socket socket = null;
+	private Socket _socket;
+	
+	/** The reference to the client. */
+	private Client _client;
 	
 	/**
 	 * Constructor.
 	 * @param socket The socket for the server thread.
 	 */
-	public GatewayServerThread(Socket socket) {
-		super("GatewayServerThread");
-		this.socket = socket;
+	public ClientListenThread(Socket socket, Client client) {
+		super("ClientListenThread");
+		_socket = socket;
+		_client = client;
 	}
 
 	/**
@@ -32,9 +36,10 @@ public class GatewayServerThread extends Thread {
 	public void run() {
 		try {
 			// Create the input and output stream.
-			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+			PrintWriter out = new PrintWriter(_socket.getOutputStream(), true);
+			BufferedReader in = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
 
+			// Read in the whole message.
 			LinkedList<String> lines = new LinkedList<String>();
 			String line;
 			while((line = in.readLine()) != null) {
@@ -45,19 +50,20 @@ public class GatewayServerThread extends Thread {
 				lines.add(line);
 			}
 			
-			// Decrypt the message send.
-			//String message = IBEHelper.decryptMessage(_gateway.getPrivateKey(), _gateway.getSystemParameters(), encryptedMessage.getBytes());
-			
 			System.out.println("Received message (first line): " + lines.get(0));
 			
+			// Decrypt the message send.
+			//String message = IBEHelper.decryptMessage(_client.getPrivateKey(), _client.getSystemParameters(), encryptedMessage.getBytes());
+			
 			// Now delegate the message to the protocol, which will process it and get the correct response.
-			IBEMessageProtocol imp = new IBEMessageProtocol();
+			IBEMessageProtocol imp = new IBEMessageProtocol(_client);
 			out.println(imp.processInput(lines));
 			out.println(IBEMessageProtocolCommands.END_OF_MESSAGE);
 			
 			// Close the streams.
-			in.close();
 			out.close();
+			in.close();
+			_socket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

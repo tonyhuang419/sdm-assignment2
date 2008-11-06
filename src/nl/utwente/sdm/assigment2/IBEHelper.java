@@ -185,22 +185,19 @@ public class IBEHelper {
 		}
 	}
 	
-	public static String sendMessageToClient(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash) throws UnknownHostException, IOException {
+	public static String registerToGateway(String identity, String address, String gatewayAddress) throws IOException {
+		return sendMessage(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT, IBEMessageProtocolCommands.REGISTER + " " + identity + " " + address);
+	}
+	
+	public static String sendMessageToGateway(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash) throws UnknownHostException, IOException {
 		// Encrypt the message to send to the client using the identity of the receiver.
 		byte[] encryptedMessage = encryptMessage(message.getBytes(), getPublicKey(sendToIdentity, hash), systemParameters);
+		System.out.println("Size of send encrypted message: " + encryptedMessage.length);
+		System.out.println("Encrypted message to client: " + new String(encryptedMessage));
 		
 		int nrOfKeywords = keywords.split(" ").length;
-		// Copy the three parts of the message to one byte array.
-		byte[] firstPart = (IBEMessageProtocolCommands.MESSAGE + " " + fromIdentity + " " + sendToIdentity + " " + nrOfKeywords + " " + keywords + " ").getBytes();
-		byte[] messageToGateway = new byte[firstPart.length + encryptedMessage.length];
-		System.arraycopy(firstPart, 0, messageToGateway, 0, firstPart.length);
-		System.arraycopy(encryptedMessage, 0, messageToGateway, firstPart.length, encryptedMessage.length);
 		
-		System.out.println("Message to gateway: " + new String(messageToGateway));
-		
-		// Encrypt the message which has to be send to the gateway.
-		//byte[] encryptedMessageToGateway = encryptMessage(messageToGateway, getPublicKey("gateway@utwente.nl", hash), systemParameters);
-		// TODO Encrypt the message.
+		System.out.println("Encrypted message: " + new String(encryptedMessage));
 		
 		// Connect to the gateway.
 		Socket socket = new Socket(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT);
@@ -208,10 +205,44 @@ public class IBEHelper {
 		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		
 		// Send the message command to the gateway.
-		out.println(new String(messageToGateway));
+		out.println(IBEMessageProtocolCommands.MESSAGE + " " + fromIdentity + " " + sendToIdentity + " " + nrOfKeywords + " " + keywords + " ");
+		out.println(new String(encryptedMessage));
+		out.println(IBEMessageProtocolCommands.END_OF_MESSAGE);
 		
+		StringBuffer inputBuffer = new StringBuffer();
+		String line;
+		while((line = in.readLine()) != null) {
+			// If it is end of message, then stop reading.
+			if (line.equals(IBEMessageProtocolCommands.END_OF_MESSAGE)) {
+				System.out.println("Found end of message.");
+				break;
+			}
+			inputBuffer.append(line);
+		}
+		String result = inputBuffer.toString();
+		
+		in.close();
+		out.close();
 		// Read the response from the server.
-		return in.readLine();
+		return result;
+	}
+	
+	public static String deliverMessageToClient(String fromIdentity, String message, String clientAddress) throws UnknownHostException, IOException {
+		// Connect to the client.
+		Socket socket = new Socket(clientAddress, IBEMessageProtocolConstants.CLIENT_LISTEN_PORT);
+		PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		
+		// Send the message command to the gateway.
+		out.println(message);
+		out.println(IBEMessageProtocolCommands.END_OF_MESSAGE);
+		
+		String result = in.readLine();
+		
+		in.close();
+		out.close();
+		// Read the response from the server.
+		return result;
 	}
 	
 	/**
@@ -229,9 +260,15 @@ public class IBEHelper {
 		
 		// Send the authenticate command.
 		out.println(message);
+		out.println(IBEMessageProtocolCommands.END_OF_MESSAGE);
 		
+		String response = in.readLine();
+		System.out.println("Received: " + response);
+		
+		in.close();
+		out.close();
 		// Read the response from the server.
-		return in.readLine();
+		return response;
 	}
 	
 	public static MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
