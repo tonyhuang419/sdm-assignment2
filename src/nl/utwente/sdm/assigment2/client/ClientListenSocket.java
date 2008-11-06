@@ -19,9 +19,9 @@ public class ClientListenSocket extends Thread {
 		super.run();
 		
         try {
-        	_socket = new ServerSocket(IBEMessageProtocolConstants.CLIENT_LISTEN_PORT);
+        	_socket = new ServerSocket(_client.getPortNumber());
         } catch (IOException e) {
-            System.err.println("Could not listen on port: " + IBEMessageProtocolConstants.CLIENT_LISTEN_PORT);
+            System.err.println("Could not listen on port: " + _client.getPortNumber());
             System.exit(-1);
         }
         

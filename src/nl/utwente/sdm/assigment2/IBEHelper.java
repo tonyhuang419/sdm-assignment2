@@ -185,8 +185,8 @@ public class IBEHelper {
 		}
 	}
 	
-	public static String registerToGateway(String identity, String address, String gatewayAddress) throws IOException {
-		return sendMessage(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT, IBEMessageProtocolCommands.REGISTER + " " + identity + " " + address);
+	public static String registerToGateway(String identity, String address, int portNumber, String gatewayAddress) throws IOException {
+		return sendMessage(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT, IBEMessageProtocolCommands.REGISTER + " " + identity + " " + address + " " + portNumber);
 	}
 	
 	public static String sendMessageToGateway(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash) throws UnknownHostException, IOException {
@@ -225,9 +225,9 @@ public class IBEHelper {
 		return result;
 	}
 	
-	public static String deliverMessageToClient(String fromIdentity, String message, String clientAddress) throws UnknownHostException, IOException {
+	public static String deliverMessageToClient(String fromIdentity, String message, String clientAddress, int clientPort) throws UnknownHostException, IOException {
 		// Connect to the client.
-		Socket socket = new Socket(clientAddress, IBEMessageProtocolConstants.CLIENT_LISTEN_PORT);
+		Socket socket = new Socket(clientAddress, clientPort);
 		PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		

@@ -21,12 +21,12 @@ public class Client {
 	 * @param identity The identity of the client.
 	 * @param defaultDeviceAddress The address of the default client.
 	 */
-	public Client(String identity, String defaultDeviceAddress) {
+	public Client(String identity, String defaultDeviceAddress, int defaultDevicePort) {
 		_identity = identity;
 		_trapdoors = new HashMap<String, TrapdoorAction>();
 		_devices = new HashMap<String, Device>();
 		_defaultDevice = defaultDeviceAddress;
-		addDevice(_defaultDevice);
+		addDevice(_defaultDevice, defaultDevicePort);
 	}
 	
 	/**
@@ -60,8 +60,8 @@ public class Client {
 	 * Add a device for the client.
 	 * @param device The device to add.
 	 */
-	public void addDevice(String address) {
-		_devices.put(address, new Device(address));
+	public void addDevice(String address, int port) {
+		_devices.put(address, new Device(address, port));
 	}
 	
 	/**
