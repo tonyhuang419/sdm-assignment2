@@ -25,4 +25,6 @@ public final class IBEMessageProtocolCommands {
 	public static final String ADD = "ADD";
 	/** Command to perform a remove action. */
 	public static final String REMOVE = "REMOVE";
+	
+	public static final String END_OF_MESSAGE = "<<EOM";
 }
