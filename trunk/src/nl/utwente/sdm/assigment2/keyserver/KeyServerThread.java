@@ -38,7 +38,9 @@ public class KeyServerThread extends Thread {
 			System.out.println("Received message: " + inputLine);
 			// Now delegate the message to the protocol, which will process it and get the correct response.
 			IBEMessageProtocol imp = new IBEMessageProtocol();
-			out.write(imp.processInput(inputLine));
+			String result = imp.processInput(inputLine);
+			out.write(result);
+			//System.out.println("KeyServerThread Returning: " + result);
 			
 			// Close the streams.
 			out.close();
