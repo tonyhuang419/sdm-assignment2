@@ -135,7 +135,12 @@ public class KeyServer {
 	 * @return Returns the generated private key for the authenticator.
 	 */
 	public PrivateKey authenticate(String identity) {
-		_authenticated.add(identity);
+		boolean newUser = _authenticated.add(identity);
+		if (newUser) { // New client/identity. add it to the list of authenticated clients. 
+			System.out.println("Authenticate: New client \"" + identity + "\" identified. Client added.");
+		} else { // Client already registered and authenticated, so authentication comes from a new device of same client.
+			System.out.println("Authenticate: Client \"" + identity + "\" already registered.");
+		}
 		return IBEHelper.getPrivateKey(identity, _map, _hash, _masterKey);
 	}
 	

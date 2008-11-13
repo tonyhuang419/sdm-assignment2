@@ -87,6 +87,7 @@ public class IBEMessageProtocol {
 				String identity = splitInput[1];
 				String address = splitInput[2];
 				int port = new Integer(splitInput[3]).intValue();
+				System.out.println("Received REGISTER message, identity=" + identity + ", address=" + address + " port=" + port);
 				
 				if (!_gateway.clientIsRegistered(identity)) {
 					_gateway.registerClient(identity, address, port);
@@ -96,7 +97,7 @@ public class IBEMessageProtocol {
 					return "Client already registered.";
 				}
 			} else {
-				return "Message contains too much arguments.";
+				return "Messageformat incorrect: message contains an incorrect amount of arguments.";
 			}
 		}
 		else if(cmd.equals(IBEMessageProtocolCommands.UNREGISTER)) {
