@@ -74,7 +74,8 @@ public class IBEMessageProtocol {
 					}
 				}
 				if (!isSend) {
-					client.getDefaultDevice().send(source, messageToReceiver);
+					Device defaultDevice = client.getDefaultDevice();
+					defaultDevice.send(source, messageToReceiver);
 				}
 				return "Send";
 			} else {
@@ -94,7 +95,15 @@ public class IBEMessageProtocol {
 					System.out.println("Client " + identity + " is registered.");
 					return "Client succesfully registered.";
 				} else {
-					return "Client already registered.";
+					Client registeredClient = _gateway.getClient(identity);
+					if (registeredClient.hasDevice(address, port)) {
+						System.out.println("Client " + identity + " already registered with this device and port.");
+						return "Client already registered with this device and port.";
+					} else {
+						registeredClient.addDevice(address, port);
+						System.out.println("Client " + identity + " already registered, but added device.");
+						return "Client already registered, but added device.";
+					}
 				}
 			} else {
 				return "Messageformat incorrect: message contains an incorrect amount of arguments.";
@@ -116,21 +125,36 @@ public class IBEMessageProtocol {
 		}
 		else if(cmd.equals(IBEMessageProtocolCommands.TRAPDOOR)) {
 			// Handle the trapdoor command.
-			String clientIdentity = splitInput[1];
-			String hashedKeyword = splitInput[2];
+			String subCmd = splitInput[1];
+			String clientIdentity = splitInput[2];
+			String hashedKeyword = splitInput[3];
 
-			if(cmd.equals(IBEMessageProtocolCommands.ADD)) {
+			if(subCmd.equals(IBEMessageProtocolCommands.ADD)) {
 				// Read the devices from the inputstream.
-				HashSet<Device> devices = new HashSet<Device>();
-				for (int i=3; i<splitInput.length; ++i) {
-					devices.add(_gateway.getClient(clientIdentity).getDevice(splitInput[i]));
+				if (_gateway.clientIsRegistered(clientIdentity)) {
+					Client client = _gateway.getClient(clientIdentity);
+					
+					HashSet<Device> devices = new HashSet<Device>();
+					for (int i=4; i<splitInput.length; ++i) {
+						String address = splitInput[i];
+						Integer portInteger = new Integer(splitInput[i+1]);
+						int port = portInteger.intValue();
+						if (client.hasDevice(address, port)) {
+							devices.add(client.getDevice(address, port));
+						} else {
+							return "Device for client '" + clientIdentity + "' with address '" + address + ":" + port + "' does not exist.";
+						}
+						i++;
+					}
+					
+					TrapdoorAction trapdoor = new TrapdoorAction(devices);
+					_gateway.getClient(clientIdentity).addTrapdoor(hashedKeyword, trapdoor);
+					return "Trapdoor succesfully added.";
+				} else {
+					return "Client with identity '" + clientIdentity + "' is not registered.";
 				}
-				
-				TrapdoorAction trapdoor = new TrapdoorAction(devices);
-				_gateway.getClient(clientIdentity).addTrapdoor(hashedKeyword, trapdoor);
-				return "Trapdoor succesfully added.";
 			}
-			else if(cmd.equals(IBEMessageProtocolCommands.REMOVE)) {
+			else if(subCmd.equals(IBEMessageProtocolCommands.REMOVE)) {
 				if (_gateway.getClient(clientIdentity).trapdoorForKeywordExist(hashedKeyword)) {
 					_gateway.getClient(clientIdentity).removeTrapdoor(hashedKeyword);
 					return "Trapdoor succesfully removed.";
@@ -154,16 +178,16 @@ public class IBEMessageProtocol {
 				String deviceAddress = splitInput[2];
 				int devicePort = new Integer(splitInput[3]).intValue();
 				if(cmd.equals(IBEMessageProtocolCommands.ADD)) {
-					if (!_gateway.getClient(clientIdentity).hasDevice(deviceAddress))
+					if (!_gateway.getClient(clientIdentity).hasDevice(deviceAddress, devicePort))
 						_gateway.getClient(clientIdentity).addDevice(deviceAddress, devicePort);
 					else
-						return "Device with address '" + deviceAddress + "' for client with identity '" + clientIdentity + "' is already registered at this gateway.";
+						return "Device with address '" + deviceAddress + ":" + devicePort + "' for client with identity '" + clientIdentity + "' is already registered at this gateway.";
 				}
 				else if(cmd.equals(IBEMessageProtocolCommands.REMOVE)) {
-					if (_gateway.getClient(clientIdentity).hasDevice(deviceAddress))
-						_gateway.getClient(clientIdentity).removeDevice(deviceAddress);
+					if (_gateway.getClient(clientIdentity).hasDevice(deviceAddress, devicePort))
+						_gateway.getClient(clientIdentity).removeDevice(deviceAddress, devicePort);
 					else
-						return "Device with address '" + deviceAddress + "' for client with identity '" + clientIdentity + "' is not registered at this gateway.";
+						return "Device with address '" + deviceAddress + ":" + devicePort + "' for client with identity '" + clientIdentity + "' is not registered at this gateway.";
 				}
 				else { return "Unable to process input: unknown DEVICE command"; }
 			} else {

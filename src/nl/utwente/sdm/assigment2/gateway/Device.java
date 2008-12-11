@@ -26,6 +26,22 @@ public class Device {
 	}
 	
 	/**
+	 * The address of the device.
+	 * @return The address of the device.
+	 */
+	public String getAddress() {
+		return _address;
+	}
+	
+	/**
+	 * Get the port the device is listening on.
+	 * @return The port the device listens on.
+	 */
+	public int getPort() {
+		return _port;
+	}
+	
+	/**
 	 * Send a message to the device.
 	 * @param message The message to send.
 	 */

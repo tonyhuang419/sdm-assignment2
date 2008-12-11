@@ -8,10 +8,7 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.util.LinkedList;
 
-
 import nl.utwente.sdm.assigment2.IBEMessageProtocolCommands;
-import nl.utwente.sdm.assigment2.IBEMessageProtocolConstants;
-
 
 public class ClientListenSocket extends Thread {
 	private Client _client;
