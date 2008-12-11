@@ -40,7 +40,8 @@ public class IBEMessageProtocol {
 			// Read the keywords from the inputstream.
 			HashSet<String> keywords = new HashSet<String>();
 			StringBuffer keywordList = new StringBuffer();
-			for (int i=4; i<4+nrOfKeywords; ++i) {
+			int maxNr = (4+nrOfKeywords < splitInput.length) ? 4+nrOfKeywords : splitInput.length;
+			for (int i=4; i<maxNr; ++i) {
 				keywords.add(splitInput[i]);
 				keywordList.append(splitInput[i]);
 			}
