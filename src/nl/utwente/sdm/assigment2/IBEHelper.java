@@ -201,7 +201,7 @@ public class IBEHelper {
 		StringBuffer encryptedKeywordBuffer = new StringBuffer();
 		for (int i=0; i<nrOfKeywords; ++i) {
 			String keyword = splittedKeywords[i];
-			encryptedKeywordBuffer.append(new String(hash.digest(keyword.getBytes())));
+			encryptedKeywordBuffer.append(new String(hash.digest(keyword.getBytes())).replace(" ", "_"));
 			if (i < nrOfKeywords - 1)
 				encryptedKeywordBuffer.append(" ");
 		}
@@ -240,7 +240,7 @@ public class IBEHelper {
 	}
 	
 	public static String addTrapdoorAtGateway(String gatewayAddress, String clientIdentity, String keyword, String clientAddress, int clientPort, MessageDigest hash) throws IOException {
-		String encryptedKeyword = new String(hash.digest(keyword.getBytes()));
+		String encryptedKeyword = new String(hash.digest(keyword.getBytes())).replace(" ", "_");
 		return sendMessage(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT, IBEMessageProtocolCommands.TRAPDOOR + " " + IBEMessageProtocolCommands.ADD + " " + clientIdentity + " " + encryptedKeyword + " " + clientAddress + " " + clientPort);
 	}
 	
