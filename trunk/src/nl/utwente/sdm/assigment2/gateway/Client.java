@@ -25,8 +25,8 @@ public class Client {
 		_identity = identity;
 		_trapdoors = new HashMap<String, TrapdoorAction>();
 		_devices = new HashMap<String, Device>();
-		_defaultDevice = defaultDeviceAddress;
-		addDevice(_defaultDevice, defaultDevicePort);
+		_defaultDevice = defaultDeviceAddress + ":" + defaultDevicePort;
+		addDevice(defaultDeviceAddress, defaultDevicePort);
 	}
 	
 	/**
@@ -61,7 +61,7 @@ public class Client {
 	 * @param device The device to add.
 	 */
 	public void addDevice(String address, int port) {
-		_devices.put(address, new Device(address, port));
+		_devices.put(address + ":" + port, new Device(address, port));
 	}
 	
 	/**
@@ -69,8 +69,8 @@ public class Client {
 	 * @param address The address of the device.
 	 * @return True when it has this device, otherwise false.
 	 */
-	public boolean hasDevice(String address) {
-		return _devices.containsKey(address);
+	public boolean hasDevice(String address, int port) {
+		return _devices.containsKey(address + ":" + port);
 	}
 	
 	/**
@@ -78,8 +78,8 @@ public class Client {
 	 * @param address The address of the device.
 	 * @return The device.
 	 */
-	public Device getDevice(String address) {
-		return _devices.get(address);
+	public Device getDevice(String address, int port) {
+		return _devices.get(address + ":" + port);
 	}
 	
 	/**
@@ -95,9 +95,9 @@ public class Client {
 	 * Remove a device for this client.
 	 * @param device The device to remove.
 	 */
-	public void removeDevice(String device) {
-		if (_devices.containsKey(device))
-			_devices.remove(device);
+	public void removeDevice(String address, int port) {
+		if (_devices.containsKey(address + ":" + port))
+			_devices.remove(address + ":" + port);
 	}
 	
 	/**

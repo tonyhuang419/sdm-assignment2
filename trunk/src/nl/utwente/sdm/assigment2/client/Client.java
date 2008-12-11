@@ -1,13 +1,14 @@
 package nl.utwente.sdm.assigment2.client;
 
 import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Font;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Vector;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -16,11 +17,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.table.DefaultTableModel;
 
 import nl.utwente.sdm.assigment2.IBEHelper;
 import nl.utwente.sdm.assigment2.IBEMessageProtocolConstants;
@@ -56,6 +61,10 @@ public class Client extends JFrame {
 	/** The MessageDigest to use for the encryption. */
 	private MessageDigest _hash;
 
+	private JTable _trapdoorTable;
+
+	private DefaultTableModel _tableModel;
+
 	/**
 	 * The procedure will set the correct look and feel,
 	 * will ask the user for the identity and start the client.
@@ -90,7 +99,7 @@ public class Client extends JFrame {
 	 * @param identity The identity of the client.
 	 */
 	public Client(String identity, String keyServerAddress, String gatewayAddress, String localAddress, int localPort) {
-		super("IBEClient - " + identity);
+		super("IBEClient - " + identity + " (" + localAddress + ":" + localPort + ")");
 		
 		// Save the information to instance variables.
 		_identity = identity;
@@ -136,14 +145,19 @@ public class Client extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(700, 300);
 		
-		Container contentPane = getContentPane();
+		getContentPane().setLayout(new BorderLayout());
 		
-		contentPane.setLayout(new BorderLayout());
+		JTabbedPane tabPane = new JTabbedPane();
+		
+		/**
+		 * Create the pane for messaging.
+		 */
+		JPanel messagingPane = new JPanel(new BorderLayout());
 		
 		JLabel explanationLabel = new JLabel("Enter some keywords (space seperated), a message, the identity of the user to send the message to and click send.");
 		explanationLabel.setFont(explanationLabel.getFont().deriveFont(Font.BOLD));
 		explanationLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		contentPane.add(explanationLabel, BorderLayout.NORTH);
+		messagingPane.add(explanationLabel, BorderLayout.NORTH);
 		
 		JPanel gridPanel = new JPanel(new BorderLayout());
 		
@@ -169,7 +183,7 @@ public class Client extends JFrame {
 		gridPanel.add(labelPanel, BorderLayout.LINE_START);
 		gridPanel.add(textFieldPanel, BorderLayout.CENTER);
 		
-		contentPane.add(gridPanel, BorderLayout.CENTER);
+		messagingPane.add(gridPanel, BorderLayout.CENTER);
 		
 		final JButton clearButton = new JButton(new AbstractAction() {
 			/** Default serial version uid. */
@@ -209,7 +223,72 @@ public class Client extends JFrame {
 		JPanel sendButtonPanel = new JPanel();
 		sendButtonPanel.add(clearButton);
 		sendButtonPanel.add(sendButton);
-		contentPane.add(sendButtonPanel, BorderLayout.SOUTH);
+		messagingPane.add(sendButtonPanel, BorderLayout.SOUTH);
+		
+		tabPane.addTab("Messaging", messagingPane);
+		
+		/**
+		 * Create the pane for setting trapdoors.
+		 */
+		JPanel trapdoorPane = new JPanel(new BorderLayout());
+		
+		// Add some explanation to the pane.
+		JLabel trapdoorExplanation = new JLabel("You can create trapdoors here. A trapdoor is an action which is fired when a certain keyword exists in the keyword list of a message, the message is then send to the device of defined in the trapdoor.");
+		trapdoorExplanation.setFont(explanationLabel.getFont().deriveFont(Font.BOLD));
+		trapdoorExplanation.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		trapdoorPane.add(trapdoorExplanation, BorderLayout.NORTH);
+		// Add a table containing the trapdoors.
+		JPanel trapdoorTablePanel = new JPanel(new BorderLayout());
+		trapdoorTablePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		Vector<String> columnNames = new Vector<String>();
+		columnNames.add("Keyword");
+		columnNames.add("Address");
+		columnNames.add("Port");
+		final Vector<Vector<String>> trapdoors = new Vector<Vector<String>>();
+		_tableModel = new DefaultTableModel(trapdoors, columnNames);
+		_trapdoorTable = new JTable(_tableModel);
+		JScrollPane tableScrollPane = new JScrollPane(_trapdoorTable);
+		trapdoorTablePanel.add(tableScrollPane, BorderLayout.CENTER);
+		trapdoorPane.add(trapdoorTablePanel, BorderLayout.CENTER);
+		// Add the buttons for adding trapdoors.
+		JPanel trapdoorButtonPane = new JPanel();
+		trapdoorButtonPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		JButton addTrapdoorButton = new JButton(new AbstractAction() {
+			/** Default serial version uid. */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// Popup a question for adding the trapdoor.
+				String keyword = JOptionPane.showInputDialog("On which keyword should the trapdoor be fired?");
+				String hashedKeyword = keyword;
+				// Get the devices of the client and give the user a selection option.
+				String deviceHost = JOptionPane.showInputDialog("What is the host of the device the message should be send to?");
+				int devicePort = new Integer(JOptionPane.showInputDialog("What is the port on which the device listens to?")).intValue();
+				
+				// Now send the request to add a trapdoor to the gateway.
+				try {
+					JOptionPane.showMessageDialog(Client.this, IBEHelper.addTrapdoorAtGateway(_gatewayAddress, _identity, hashedKeyword, deviceHost, devicePort, _hash));
+					Vector<String> trapdoor = new Vector<String>();
+					trapdoor.add(keyword);
+					trapdoor.add(deviceHost);
+					trapdoor.add("" + devicePort);
+					_tableModel.addRow(trapdoor);
+				} catch (HeadlessException e1) {
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
+		addTrapdoorButton.setText("Add trapdoor");
+		trapdoorButtonPane.add(addTrapdoorButton);
+		trapdoorPane.add(trapdoorButtonPane, BorderLayout.SOUTH);
+		
+		tabPane.addTab("Trapdoors", trapdoorPane);
+		
+		// Add the tabbed pane to the contentpane of the window.
+		getContentPane().add(tabPane, BorderLayout.CENTER);
 		
 		// Show the frame.
 		setVisible(true);

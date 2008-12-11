@@ -87,29 +87,27 @@ public class IBEHelper {
 	 * @return The encrypted message, the cipher text as a byte[].
 	 */
 	public static byte[] encryptMessage(byte[] plaintext, PublicKey publicKey, IbeSystemParameters systemParameters) {
-        try {
-        	Provider provider = new IbeProvider();
-        	// get the ibe cipher
-        	Cipher cipher = Cipher.getInstance( IbeProvider.IBE, provider );
-        	cipher.init( Cipher.ENCRYPT_MODE, publicKey, systemParameters, new SecureRandom() );
-        	// encrypt the plaintext
-        	return cipher.doFinal( plaintext );
-        } catch( NoSuchAlgorithmException nsae ) {
-            // handle exception
-            nsae.printStackTrace();
-        } catch( NoSuchPaddingException nspe ) {
-            // handle exception
-            nspe.printStackTrace();
-        } catch( InvalidKeyException ike ) {
-        	ike.printStackTrace();
-        } catch( InvalidAlgorithmParameterException iape ) {
-        	iape.printStackTrace();
-        } catch( IllegalBlockSizeException ibse ) {
-        	ibse.printStackTrace();
-        } catch( BadPaddingException bpe ) {
-        	bpe.printStackTrace();
-        }
-        return null;
+    	try {
+			Provider provider = new IbeProvider();
+			// get the ibe cipher
+			Cipher cipher = Cipher.getInstance( IbeProvider.IBE, provider );
+			cipher.init( Cipher.ENCRYPT_MODE, publicKey, systemParameters, new SecureRandom() );
+    		// encrypt the plaintext, this takes quite some time...
+			return cipher.doFinal( plaintext );
+    	} catch (NoSuchAlgorithmException e) {
+    		e.printStackTrace();
+    	} catch (NoSuchPaddingException e) {
+    		e.printStackTrace();
+    	} catch (InvalidKeyException e) {
+    		e.printStackTrace();
+    	} catch (InvalidAlgorithmParameterException e) {
+    		e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public static String decryptMessage(PrivateKey privateKey, IbeSystemParameters systemParameters, byte[] ciphertext) {
@@ -190,20 +188,34 @@ public class IBEHelper {
 	}
 	
 	public static String sendMessageToGateway(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash) throws UnknownHostException, IOException {
+		System.out.println("Sending message");
 		// Encrypt the message to send to the client using the identity of the receiver.
+		System.out.println("Encrypting message...");
 		byte[] encryptedMessage = encryptMessage(message.getBytes(), getPublicKey(sendToIdentity, hash), systemParameters);
+		System.out.println("Done encrypting.");
 		//System.out.println("Size of send encrypted message: " + encryptedMessage.length);
 		//System.out.println("Encrypted message to client: " + new String(encryptedMessage));
 		
-		int nrOfKeywords = keywords.split(" ").length;
+		String[] splittedKeywords = keywords.split(" ");
+		int nrOfKeywords = splittedKeywords.length;
+		StringBuffer encryptedKeywordBuffer = new StringBuffer();
+		for (int i=0; i<nrOfKeywords; ++i) {
+			String keyword = splittedKeywords[i];
+			encryptedKeywordBuffer.append(new String(hash.digest(keyword.getBytes())));
+			if (i < nrOfKeywords - 1)
+				encryptedKeywordBuffer.append(" ");
+		}
+		String encryptedKeywords = encryptedKeywordBuffer.toString();
 		
 		// Connect to the gateway.
 		Socket socket = new Socket(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT);
 		PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		
+		System.out.println("Sending message over the network.");
+		
 		// Send the message command to the gateway.
-		out.println(IBEMessageProtocolCommands.MESSAGE + " " + fromIdentity + " " + sendToIdentity + " " + nrOfKeywords + " " + keywords + " ");
+		out.println(IBEMessageProtocolCommands.MESSAGE + " " + fromIdentity + " " + sendToIdentity + " " + nrOfKeywords + " " + encryptedKeywords + " ");
 		out.println(new String(encryptedMessage));
 		out.println(IBEMessageProtocolCommands.END_OF_MESSAGE);
 		
@@ -222,7 +234,14 @@ public class IBEHelper {
 		in.close();
 		out.close();
 		// Read the response from the server.
+		
+		System.out.println("Message send.");
 		return result;
+	}
+	
+	public static String addTrapdoorAtGateway(String gatewayAddress, String clientIdentity, String keyword, String clientAddress, int clientPort, MessageDigest hash) throws IOException {
+		String encryptedKeyword = new String(hash.digest(keyword.getBytes()));
+		return sendMessage(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT, IBEMessageProtocolCommands.TRAPDOOR + " " + IBEMessageProtocolCommands.ADD + " " + clientIdentity + " " + encryptedKeyword + " " + clientAddress + " " + clientPort);
 	}
 	
 	public static String deliverMessageToClient(String fromIdentity, String message, String clientAddress, int clientPort) throws UnknownHostException, IOException {
