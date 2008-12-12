@@ -22,6 +22,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ProgressMonitor;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -206,16 +207,12 @@ public class Client extends JFrame {
 				String message = messageArea.getText();
 				String sendToIdentity = sendToField.getText();
 				
-				try {
-					String sendStatus = IBEHelper.sendMessageToGateway(message, keywords, _identity, sendToIdentity, _gatewayAddress, _systemParameters, _hash);
-					JOptionPane.showMessageDialog(Client.this, "Message send status: " + sendStatus);
-					// Clear the fields.
-					clearButton.doClick();
-				} catch (UnknownHostException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				ProgressMonitor progress = new ProgressMonitor(Client.this, "Sending message", "", 0, 100);
+				progress.setProgress(1);
+				SendStatusRunnable sendMessage = new SendStatusRunnable(message, keywords, _identity, sendToIdentity, _gatewayAddress, _systemParameters, _hash, progress);
+				sendMessage.start();
+				// Clear the fields.
+				clearButton.doClick();
 			}
 		});
 		sendButton.setText("Send");
@@ -268,12 +265,15 @@ public class Client extends JFrame {
 				
 				// Now send the request to add a trapdoor to the gateway.
 				try {
-					JOptionPane.showMessageDialog(Client.this, IBEHelper.addTrapdoorAtGateway(_gatewayAddress, _identity, hashedKeyword, deviceHost, devicePort, _hash));
-					Vector<String> trapdoor = new Vector<String>();
-					trapdoor.add(keyword);
-					trapdoor.add(deviceHost);
-					trapdoor.add("" + devicePort);
-					_tableModel.addRow(trapdoor);
+					String addTrapdoorAtGateway = IBEHelper.addTrapdoorAtGateway(_gatewayAddress, _identity, hashedKeyword, deviceHost, devicePort, _hash);
+					JOptionPane.showMessageDialog(Client.this, addTrapdoorAtGateway);
+					if (addTrapdoorAtGateway.equals("Trapdoor succesfully added.")) {
+						Vector<String> trapdoor = new Vector<String>();
+						trapdoor.add(keyword);
+						trapdoor.add(deviceHost);
+						trapdoor.add("" + devicePort);
+						_tableModel.addRow(trapdoor);
+					}
 				} catch (HeadlessException e1) {
 					e1.printStackTrace();
 				} catch (IOException e1) {
@@ -316,5 +316,41 @@ public class Client extends JFrame {
 	public int getPortNumber() {
 		return _localPort;
 	}
+	
+	private class SendStatusRunnable extends Thread {
+		private String _message;
+		private String _keywords;
+		private String _fromIdentity;
+		private String _sendToIdentity;
+		private String _gatewayAddress;
+		private IbeSystemParameters _systemParameters;
+		private MessageDigest _hash;
+		private ProgressMonitor _progress;
+		
+		public SendStatusRunnable(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash, ProgressMonitor progress) {
+			_message = message;
+			_keywords = keywords;
+			_fromIdentity = fromIdentity;
+			_sendToIdentity = sendToIdentity;
+			_gatewayAddress = gatewayAddress;
+			_systemParameters = systemParameters;
+			_hash = hash;
+			_progress = progress;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				String sendStatus = IBEHelper.sendMessageToGateway(_message, _keywords, _fromIdentity, _sendToIdentity, _gatewayAddress, _systemParameters, _hash, _progress);
+				
+				_progress.close();
+				JOptionPane.showMessageDialog(Client.this, "Message send status: " + sendStatus);
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	};
 
 }
