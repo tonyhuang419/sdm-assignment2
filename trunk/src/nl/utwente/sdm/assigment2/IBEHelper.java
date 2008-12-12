@@ -22,6 +22,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.swing.ProgressMonitor;
 
 import nuim.cs.crypto.bilinear.BilinearMap;
 import nuim.cs.crypto.bilinear.ModifiedTatePairing;
@@ -187,15 +188,18 @@ public class IBEHelper {
 		return sendMessage(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT, IBEMessageProtocolCommands.REGISTER + " " + identity + " " + address + " " + portNumber);
 	}
 	
-	public static String sendMessageToGateway(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash) throws UnknownHostException, IOException {
-		System.out.println("Sending message");
+	public static String sendMessageToGateway(String message, String keywords, String fromIdentity, String sendToIdentity, String gatewayAddress, IbeSystemParameters systemParameters, MessageDigest hash, ProgressMonitor progress) throws UnknownHostException, IOException {
 		// Encrypt the message to send to the client using the identity of the receiver.
-		System.out.println("Encrypting message...");
+		progress.setNote("Initialize encryption.");
+		progress.setProgress(10);
+		progress.setNote("Encrypting message.");
 		byte[] encryptedMessage = encryptMessage(message.getBytes(), getPublicKey(sendToIdentity, hash), systemParameters);
-		System.out.println("Done encrypting.");
+		progress.setNote("Done encrypting message.");
+		progress.setProgress(80);
 		//System.out.println("Size of send encrypted message: " + encryptedMessage.length);
 		//System.out.println("Encrypted message to client: " + new String(encryptedMessage));
 		
+		progress.setNote("Encrypting keywords.");
 		String[] splittedKeywords = keywords.split(" ");
 		int nrOfKeywords = splittedKeywords.length;
 		StringBuffer encryptedKeywordBuffer = new StringBuffer();
@@ -206,13 +210,15 @@ public class IBEHelper {
 				encryptedKeywordBuffer.append(" ");
 		}
 		String encryptedKeywords = encryptedKeywordBuffer.toString();
+		progress.setProgress(90);
+		progress.setNote("Done encrypting keywords.");
 		
 		// Connect to the gateway.
 		Socket socket = new Socket(gatewayAddress, IBEMessageProtocolConstants.GATEWAY_SERVER_PORT);
 		PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		
-		System.out.println("Sending message over the network.");
+		progress.setNote("Sending message to gateway.");
 		
 		// Send the message command to the gateway.
 		out.println(IBEMessageProtocolCommands.MESSAGE + " " + fromIdentity + " " + sendToIdentity + " " + nrOfKeywords + " " + encryptedKeywords + " ");
@@ -229,13 +235,16 @@ public class IBEHelper {
 			}
 			inputBuffer.append(line);
 		}
+		progress.setProgress(95);
+		progress.setNote("Retreiving result.");
 		String result = inputBuffer.toString();
 		
 		in.close();
 		out.close();
 		// Read the response from the server.
 		
-		System.out.println("Message send.");
+		progress.setNote("Message send.");
+		progress.setProgress(100);
 		return result;
 	}
 	
